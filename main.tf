@@ -90,6 +90,9 @@ resource "aws_s3_bucket" "memory-card-game-frontend" {
     Name        = "Memory Card Game Frontend"
     Environment = "Prod"
   }
+
+  # Force destroy will remove the bucket even if it contains objects
+  force_destroy = true
 }
 
 # Disable Block Public Access settings
