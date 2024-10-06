@@ -1,6 +1,6 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
 # with its version. On push / workflow_dispatch  events, this workflow will run
-name: 'Terraform'
+name: 'Terraform Apply'
 
 on:
   push:
