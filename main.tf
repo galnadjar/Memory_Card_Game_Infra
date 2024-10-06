@@ -82,7 +82,20 @@ resource "aws_route_table_association" "public_http_rt_assoc" {
 }
 
 
-# Create the S3 bucket
+# Create the S3 buckets
+# terraform bucket is used to store the state file, and is being populated in the github action terraform_apply
+resource "aws_s3_bucket" "memory-card-game-terraform" {
+  bucket = "memory-card-game-terraform"
+
+  tags = {
+    Name        = "Memory Card Game terraform files"
+    Environment = "Prod"
+  }
+
+  # Force destroy will remove the bucket even if it contains objects
+  force_destroy = true
+}
+
 resource "aws_s3_bucket" "memory-card-game-frontend" {
   bucket = "memory-card-game-frontend"
 
@@ -96,7 +109,7 @@ resource "aws_s3_bucket" "memory-card-game-frontend" {
 }
 
 # Disable Block Public Access settings
-resource "aws_s3_bucket_public_access_block" "public_access_block" {
+resource "aws_s3_bucket_public_access_block" "frontend_public_access_block" {
   bucket = aws_s3_bucket.memory-card-game-frontend.id
 
   block_public_acls       = false
@@ -105,8 +118,17 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
   restrict_public_buckets = false
 }
 
+resource "aws_s3_bucket_public_access_block" "terraform_public_access_block" {
+  bucket = aws_s3_bucket.memory-card-game-terraform.id
 
-# Configure the S3 bucket for website hosting
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+
+# Configure the frontend S3 bucket for website hosting
 resource "aws_s3_bucket_website_configuration" "memory-card-game-frontend_website" {
   bucket = aws_s3_bucket.memory-card-game-frontend.bucket
 
@@ -118,7 +140,7 @@ resource "aws_s3_bucket_website_configuration" "memory-card-game-frontend_websit
 
 
 # Bucket policy to allow public access to the files
-resource "aws_s3_bucket_policy" "public_access_policy" {
+resource "aws_s3_bucket_policy" "frontend_public_access_policy" {
   bucket = aws_s3_bucket.memory-card-game-frontend.id
 
   policy = jsonencode({
@@ -129,6 +151,25 @@ resource "aws_s3_bucket_policy" "public_access_policy" {
         Principal = "*"
         Action = "s3:GetObject"
         Resource = "${aws_s3_bucket.memory-card-game-frontend.arn}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_policy" "terraform_public_access_policy" {
+  bucket = aws_s3_bucket.memory-card-game-terraform.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ]
+        Resource = "${aws_s3_bucket.memory-card-game-terraform.arn}/*"
       }
     ]
   })
