@@ -51,5 +51,5 @@ jobs:
 
         # destroyes the terraform infra previously created
       - name: Terraform Destroy
-        run: terraform destroy
+        run: terraform destroy -force
 
