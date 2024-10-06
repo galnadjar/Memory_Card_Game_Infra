@@ -140,6 +140,7 @@ resource "aws_s3_bucket_website_configuration" "memory-card-game-frontend_websit
 
 # Bucket policy to allow public access to the files
 resource "aws_s3_bucket_policy" "frontend_public_access_policy" {
+  depends_on = [ aws_s3_bucket_public_access_block.frontend_public_access_block ]
   bucket = aws_s3_bucket.memory-card-game-frontend.id
 
   policy = jsonencode({
@@ -155,24 +156,6 @@ resource "aws_s3_bucket_policy" "frontend_public_access_policy" {
   })
 }
 
-resource "aws_s3_bucket_policy" "terraform_public_access_policy" {
-  bucket = aws_s3_bucket.memory-card-game-terraform.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = "*"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject"
-        ]
-        Resource = "${aws_s3_bucket.memory-card-game-terraform.arn}/*"
-      }
-    ]
-  })
-}
 
 
 
