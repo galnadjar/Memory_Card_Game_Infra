@@ -16,3 +16,8 @@ variable "subnet_cidr" {
   default = "10.0.1.0/24"
 }
 
+variable "ecr_repo_name" {
+  description = "ecr repo name"
+  type = string
+  default = "memory_card_game"
+}

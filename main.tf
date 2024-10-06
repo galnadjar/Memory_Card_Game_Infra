@@ -156,6 +156,14 @@ resource "aws_s3_bucket_policy" "frontend_public_access_policy" {
   })
 }
 
+resource "awscc_ecr_repository" "aws_backend_ecr_repo" {
+  repository_name      = var.ecr_repo_name
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration = {
+    scan_on_push = true
+  }
+
+}
 
 
 
