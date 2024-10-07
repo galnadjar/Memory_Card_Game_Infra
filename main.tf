@@ -160,7 +160,7 @@ resource "aws_ecr_repository" "my_repository" {
 
   # delete all the images
   provisioner "local-exec" {
-    command = "aws ecr delete-image --repository-name ${aws_ecr_repository.my_repository.name} --image-tags '*'"
+    command = "aws ecr batch-delete-image --repository-name ${aws_ecr_repository.my_repository.name} --image-tags '*'"
   }
 }
 
