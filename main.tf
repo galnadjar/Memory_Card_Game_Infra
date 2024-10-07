@@ -162,7 +162,8 @@ resource "awscc_ecr_repository" "aws_backend_ecr_repo" {
   image_scanning_configuration = {
     scan_on_push = true
   }
-
+  # Force destroy will remove the bucket even if it contains objects
+  empty_on_delete = true
 }
 
 
