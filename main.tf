@@ -11,74 +11,95 @@ resource "aws_vpc" "myVPC" {
   }
 }
 
-# Create a Subnet
-resource "aws_subnet" "mySubnet" {
+# Create a public Subnet
+resource "aws_subnet" "my_public_subnet" {
   vpc_id            = aws_vpc.myVPC.id
-  cidr_block        = var.subnet_cidr
+  cidr_block        = var.public_subnet_cidr
 
   tags = {
-    Name = "mySubnet"
+    Name = "my_public_subnet"
   }
 }
 
-# Create a Security Group for HTTP Traffic
-resource "aws_security_group" "mySecurityGroup" {
-  name        = "mySecurityGroup"
-  description = "A security group for example instances"
-  vpc_id = aws_vpc.myVPC.id
+# Create a private Subnet
+resource "aws_subnet" "my_private_subnet1" {
+  vpc_id            = aws_vpc.myVPC.id
+  cidr_block        = var.private_subnet_1_cidr
+  availability_zone = var.aws_region_1
+  tags = {
+    Name = "my_private_subnet1"
+  }
+}
+
+# Create a private Subnet
+resource "aws_subnet" "my_private_subnet2" {
+  vpc_id            = aws_vpc.myVPC.id
+  cidr_block        = var.private_subnet_2_cidr
+  availability_zone = var.aws_region_2
+  tags = {
+    Name = "my_private_subnet2"
+  }
+}
+
+
+# # Create a public Security Group for HTTP Traffic
+# resource "aws_security_group" "public_security_group" {
+#   name        = "public_security_group"
+#   description = "A security group for example instances"
+#   vpc_id = aws_vpc.myVPC.id
   
-  # http - requires nginx(or other webserver open)
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   # http - requires nginx(or other webserver open)
+#   ingress {
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-  # ssh
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   # ssh
+#   ingress {
+#     from_port   = 22
+#     to_port     = 22
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = -1
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-}
+# }
 
-# Create an internet Gateway
-resource "aws_internet_gateway" "myGW" {
-  vpc_id = aws_vpc.myVPC.id
+# # Create an internet Gateway
+# resource "aws_internet_gateway" "myGW" {
+#   vpc_id = aws_vpc.myVPC.id
 
-  tags = {
-    Name = "myGW"
-  }
-}
+#   tags = {
+#     Name = "myGW"
+#   }
+# }
 
-# Create public route-table (towards gateway)
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.myVPC.id
+# # Create public route-table (towards gateway)
+# resource "aws_route_table" "public_rt" {
+#   vpc_id = aws_vpc.myVPC.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.myGW.id
-  }
-  tags = {
-    Name = "public_rt"
-  }
-}
+#   route {
+#     cidr_block = "0.0.0.0/0"
+#     gateway_id = aws_internet_gateway.myGW.id
+#   }
+#   tags = {
+#     Name = "public_rt"
+#   }
+# }
 
-# Create association from subnet to the route-table
-resource "aws_route_table_association" "public_http_rt_assoc" {
-  subnet_id = aws_subnet.mySubnet.id
-  route_table_id = aws_route_table.public_rt.id
-}
+# # Create association from public subnet to the route-table
+# resource "aws_route_table_association" "public_http_rt_assoc" {
+#   subnet_id = aws_subnet.my_public_subnet.id
+#   route_table_id = aws_route_table.public_rt.id
+# }
 
 
 # Create the S3 buckets
@@ -164,14 +185,47 @@ resource "aws_ecr_repository" "aws_backend_ecr_repo" {
   force_delete = true
 }
 
+module "eks_al2" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+
+  cluster_name    = "matching_cards_game"
+  # cluster_version = "1.30"
+  cluster_endpoint_public_access = true
+  # EKS Addons
+  cluster_addons = {
+    coredns                = { most_recent = true }
+    eks-pod-identity-agent = { most_recent = true }
+    kube-proxy             = { most_recent = true }
+    vpc-cni                = { most_recent = true }
+  }
+  
+  vpc_id     = aws_vpc.myVPC.id
+  subnet_ids = [aws_subnet.my_private_subnet1.id,aws_subnet.my_private_subnet2.id ]
+
+  eks_managed_node_groups = {
+    cards_game_EKS_wg = {
+      ami_type       = "AL2_x86_64"
+      instance_types = ["m5.large"]
+      capacity_type = "SPOT"
+
+      min_size = 1
+      max_size = 2
+      desired_size = 1
+    }
+  }
+
+}
+
+
 
 
 # # Create EC2 INSTANCE
 # resource "aws_instance" "app_server" {
 #   ami           = var.ec2_rhel_ami
 #   instance_type = "t3.micro"
-#   vpc_security_group_ids = [aws_security_group.mySecurityGroup.id]
-#   subnet_id = aws_subnet.mySubnet.id
+#   vpc_security_group_ids = [aws_security_group.public_security_group.id]
+#   subnet_id = aws_subnet.my_public_subnet.id
 #   associate_public_ip_address = true
  
 #   tags = {
