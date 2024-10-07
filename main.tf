@@ -155,15 +155,25 @@ resource "aws_s3_bucket_policy" "frontend_public_access_policy" {
     ]
   })
 }
+resource "aws_ecr_repository" "my_repository" {
+  name = var.ecr_repo_name
+
+  # delete all the images
+  provisioner "local-exec" {
+    command = "aws ecr delete-image --repository-name ${aws_ecr_repository.my_repository.name} --image-tags '*'"
+    when = "${terraform.state.id != null}"  # Empty string during create/update
+  }
+}
 
 resource "awscc_ecr_repository" "aws_backend_ecr_repo" {
-  repository_name      = var.ecr_repo_name
+  repository_name = var.ecr_repo_name
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration = {
     scan_on_push = true
   }
-  # Force destroy will remove the bucket even if it contains objects
-  empty_on_delete = true
+
+  # Depends on aws_ecr_repository to ensure image deletion before repository deletion
+  depends_on = [aws_ecr_repository.my_repository]
 }
 
 
