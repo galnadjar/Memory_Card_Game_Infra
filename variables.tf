@@ -10,24 +10,37 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
-variable "public_subnet_cidr" {
-  description = "value of the CIDR range for the subnet"
+variable "aws_region" {
+  description = "aws region"
   type = string
-  default = "10.0.0.0/24"
+  default = "eu-north-1"
 }
 
-variable "private_subnet_1_cidr" {
-  description = "value of the CIDR range for the subnet"
+variable "vpc_name" {
+  description = "the name of the VPC"
   type = string
-  default = "10.0.1.0/24"
+  default = "memory_card_game_VPC"
 }
 
-variable "private_subnet_2_cidr" {
-  description = "value of the CIDR range for the subnet"
-  type = string
-  default = "10.0.2.0/24"
+variable "aws_azs" {
+  type = list(string)
+  default = [ "eu-north-1a", "eu-north-1b" ]
 }
 
+variable "aws_public_subnets" {
+  type = list(string)
+  default = [ "10.0.0.0/24","10.0.1.0/24" ]
+}
+
+variable "aws_private_subnets" {
+  type = list(string)
+  default = [ "10.0.2.0/24","10.0.3.0/24" ]
+}
+
+variable "aws_control_plane_subnets" {
+  type = list(string)
+  default = [ "10.0.4.0/24","10.0.5.0/24" ]
+}
 
 variable "ecr_repo_name" {
   description = "ecr repo name"
@@ -57,24 +70,6 @@ variable "eksctl_cluster_api_ver" {
   description = "eksctl cluster api ver"
   type = string
   default = "eksctl.io/v1alpha5"
-}
-
-variable "aws_region_1" {
-  description = "aws region"
-  type = string
-  default = "eu-north-1a"
-}
-
-variable "aws_region_2" {
-  description = "aws region"
-  type = string
-  default = "eu-north-1b"
-}
-
-variable "eksctl_bin" {
-  description = "eksctl binary"
-  type = string
-  default = "eksctl"
 }
 
 variable "eks_cluster_name" {
